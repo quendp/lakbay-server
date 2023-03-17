@@ -7,10 +7,10 @@
     "dialect": "mysql"
   },
   "test": {
-    "username": "root",
-    "password": null,
-    "database": "database_test",
-    "host": "127.0.0.1",
+    "username": "u492874306_lakbay_tester",
+    "password": "Jm2@bFk&ToX",
+    "database": "u492874306_lakbay_test",
+    "host": "82.180.152.204",
     "dialect": "mysql"
   },
   "production": {
