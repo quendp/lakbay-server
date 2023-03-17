@@ -7,9 +7,17 @@
     "dialect": "mysql"
   },
   "test": {
-    "use_env_variable": true
+    "username": "u492874306_lakbay_tester",
+    "password": "Jm2@bFk&ToX",
+    "database": "u492874306_lakbay_test",
+    "host": "82.180.152.204",
+    "dialect": "mysql"
   },
   "production": {
-    "use_env_variable": true
+    "username": "root",
+    "password": null,
+    "database": "database_production",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
   }
 }
