@@ -11,14 +11,19 @@ const db = {};
 
 let sequelize;
 if (config.use_env_variable) {
-  sequelize = new Sequelize({
-    username: process.env.DB_USERNAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    dialect: "mysql",
-    port: process.env.PORT,
-    host: process.env.DB_HOST,
-  });
+  sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USERNAME,
+    process.env.DB_PASSWORD,
+    {
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      dialect: "mysql",
+      port: process.env.PORT,
+      host: process.env.DB_HOST,
+    }
+  );
 } else {
   sequelize = new Sequelize(
     config.database,
