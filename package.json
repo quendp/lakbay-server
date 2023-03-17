@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "sequelize db:migrate && sequelize db:seed --seed 220230316183542-default-packages.js && node app.js",
+    "start": "sequelize db:migrate && sequelize db:seed --seed 20230316183542-default-packages.js && node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
