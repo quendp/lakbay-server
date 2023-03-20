@@ -1,4 +1,4 @@
-const { Users } = require("../../models");
+const { Users, Bookings, Companions } = require("../../models");
 const { Op } = require("sequelize");
 const jwt = require("jsonwebtoken");
 const { jwtSecret } = require("../../config/secrets");
@@ -63,7 +63,8 @@ class UsersService {
           id: accountExists.id,
           email: accountExists.email,
         },
-        jwtSecret
+        jwtSecret,
+        { expiresIn: "15s" }
       );
       return {
         token: jwtToken,
@@ -79,10 +80,65 @@ class UsersService {
   static async getUserByUsername(username) {
     try {
       const currentUser = await Users.findOne({
-        where: { username },
-        include: "Bookings",
+        where: {
+          [Op.and]: [{ username }, { roleId: 1 }],
+        },
+        include: [
+          {
+            model: Bookings,
+            as: "Bookings",
+            include: [
+              {
+                model: Companions,
+                as: "Companions",
+              },
+            ],
+          },
+        ],
       });
-      return currentUser;
+      return currentUser ? currentUser : { message: "User does not exist." };
+    } catch (e) {
+      console.log(e);
+      throw new Error();
+    }
+  }
+
+  static async updateAgent(agentName, fieldsToUpdate) {
+    try {
+      const agentToUpdate = await Users.findOne({
+        where: { username: agentName },
+      });
+      if (agentToUpdate && agentToUpdate.roleId === 2) {
+        const fields = Object.keys(fieldsToUpdate);
+        fields.forEach((field) => {
+          agentToUpdate[field] = fieldsToUpdate[field];
+        });
+        await agentToUpdate.save();
+        return agentToUpdate;
+      }
+      return null;
+    } catch (e) {
+      console.log(e);
+      throw new Error();
+    }
+  }
+
+  static async getAgent(agentName) {
+    try {
+      const agent = await Users.findOne({
+        where: {
+          [Op.and]: [{ username: agentName }, { roleId: 2 }],
+        },
+      });
+
+      const bookings = await Bookings.findAll({
+        where: {
+          agentId: agent.id,
+        },
+      });
+
+      const agentData = { agent: agent, assignedBookings: bookings };
+      return agent ? agentData : { message: "Agent does not exist." };
     } catch (e) {
       console.log(e);
       throw new Error();

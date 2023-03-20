@@ -52,6 +52,31 @@ class UsersController {
     }
   }
 
+  static async updateAgent(req, res) {
+    try {
+      const { agentName } = req.params;
+      const fieldsToUpdate = req.body;
+      const user = await UsersService.updateAgent(agentName, fieldsToUpdate);
+      user
+        ? res.json(user)
+        : res.status(404).json({ message: "Agent not found." });
+    } catch (e) {
+      res
+        .status(400)
+        .json({ message: "An error occured. Cannot update agent." });
+    }
+  }
+
+  static async getAgent(req, res) {
+    try {
+      const { agentName } = req.params;
+      const agent = await UsersService.getAgent(agentName);
+      res.json(agent);
+    } catch (err) {
+      res.status(404).json({ message: "Agent not Found" });
+    }
+  }
+
   // for tesing purposes only
   static async createUser(req, res) {
     try {
