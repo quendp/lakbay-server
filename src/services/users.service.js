@@ -64,7 +64,7 @@ class UsersService {
           email: accountExists.email,
         },
         jwtSecret,
-        { expiresIn: "15s" }
+        { expiresIn: "1h" }
       );
       return {
         token: jwtToken,
