@@ -1,6 +1,16 @@
 const { UsersService } = require("../services/users.service");
 
 class UsersController {
+  static async persistUser(req, res) {
+    try {
+      const { token } = req.body;
+      const accessData = await UsersService.persistUser({ token });
+      res.json(accessData);
+    } catch (err) {
+      res.status(400).json({ message: "Error logging in. Try again later." });
+    }
+  }
+
   static async registerUser(req, res) {
     try {
       const {
@@ -13,7 +23,9 @@ class UsersController {
         address,
         password,
       } = req.body;
-      const user = await UsersService.registerUser({
+      const { roleId } = req.params;
+      const accessData = await UsersService.registerUser({
+        roleId,
         username,
         firstname,
         lastname,
@@ -23,7 +35,7 @@ class UsersController {
         address,
         password,
       });
-      res.json(user);
+      res.json(accessData);
     } catch (e) {
       res.status(400).json({ message: "Error creating user" });
     }
@@ -32,38 +44,48 @@ class UsersController {
   static async loginUser(req, res) {
     try {
       const { usernameOrEmail, password } = req.body;
-      const token = await UsersService.loginUser({
+      const accessData = await UsersService.loginUser({
         usernameOrEmail,
         password,
       });
-      res.json(token);
+      res.json(accessData);
     } catch (e) {
       res.status(400).json({ message: "Error logging in. Try again later." });
     }
   }
 
-  static async getUserByUsername(req, res) {
+  static async logoutUser(req, res) {
+    res.json({ token: false, username: "login", role: 0 });
+    res.status(204);
+  }
+
+  static async getUser(req, res) {
     try {
       const { username } = req.params;
-      const user = await UsersService.getUserByUsername(username);
+      const user = await UsersService.getUser(username);
+      if (user.username) user.password = "********";
       res.json(user);
     } catch (e) {
       res.status(404).json({ message: "User not Found" });
     }
   }
 
-  static async updateAgent(req, res) {
+  static async updateUser(req, res) {
     try {
-      const { agentName } = req.params;
+      const { roleId, username } = req.params;
       const fieldsToUpdate = req.body;
-      const user = await UsersService.updateAgent(agentName, fieldsToUpdate);
+      const user = await UsersService.updateUser(
+        roleId,
+        username,
+        fieldsToUpdate
+      );
       user
         ? res.json(user)
-        : res.status(404).json({ message: "Agent not found." });
+        : res.status(404).json({ message: "User not found." });
     } catch (e) {
       res
         .status(400)
-        .json({ message: "An error occured. Cannot update agent." });
+        .json({ message: "An error occured. Cannot update user." });
     }
   }
 
@@ -71,6 +93,7 @@ class UsersController {
     try {
       const { agentName } = req.params;
       const agent = await UsersService.getAgent(agentName);
+      if (agent.agent.username) agent.agent.password = "********";
       res.json(agent);
     } catch (err) {
       res.status(404).json({ message: "Agent not Found" });

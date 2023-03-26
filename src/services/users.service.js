@@ -2,9 +2,49 @@ const { Users, Bookings, Companions } = require("../../models");
 const { Op } = require("sequelize");
 const jwt = require("jsonwebtoken");
 const { jwtSecret } = require("../../config/secrets");
+const jwt_decode = require("jwt-decode");
 
 class UsersService {
+  static async persistUser({ token }) {
+    try {
+      const payload = jwt_decode(token);
+
+      // check if username roleId exists and matches
+      const accountExists = await Users.findOne({
+        where: {
+          [Op.and]: [
+            { username: payload.username },
+            { roleId: payload.roleId },
+          ],
+        },
+      });
+      if (!accountExists) {
+        return null;
+      }
+
+      //replace old token with new token
+      const jwtToken = jwt.sign(
+        {
+          username: accountExists.username,
+          roleId: accountExists.roleId,
+        },
+        jwtSecret,
+        { expiresIn: "7d" }
+      );
+
+      return {
+        token: jwtToken,
+        username: accountExists.username,
+        role: accountExists.roleId,
+      };
+    } catch (err) {
+      console.log("Login failed: ", err);
+      return null;
+    }
+  }
+
   static async registerUser({
+    roleId,
     username,
     firstname,
     lastname,
@@ -27,7 +67,7 @@ class UsersService {
       }
       // create user
       const newUser = await Users.create({
-        roleId: 1,
+        roleId,
         username,
         firstname,
         lastname,
@@ -37,9 +77,29 @@ class UsersService {
         address,
         password,
       });
-      return newUser;
+
+      const createdUser = await Users.findOne({
+        where: { username: newUser.username },
+      });
+      if (!createdUser) {
+        return { message: "Failed to create user." };
+      }
+      const jwtToken = jwt.sign(
+        {
+          username: createdUser.username,
+          roleId: createdUser.roleId,
+        },
+        jwtSecret,
+        { expiresIn: "7d" }
+      );
+      return {
+        token: jwtToken,
+        username: createdUser.username,
+        role: createdUser.roleId,
+      };
     } catch (err) {
       console.log("Registration failed: ", err);
+      return { message: "Registration failed. Try again later." };
     }
   }
 
@@ -60,11 +120,11 @@ class UsersService {
       }
       const jwtToken = jwt.sign(
         {
-          id: accountExists.id,
-          email: accountExists.email,
+          username: accountExists.username,
+          roleId: accountExists.roleId,
         },
         jwtSecret,
-        { expiresIn: "1h" }
+        { expiresIn: "7d" }
       );
       return {
         token: jwtToken,
@@ -72,12 +132,12 @@ class UsersService {
         role: accountExists.roleId,
       };
     } catch (err) {
-      console.log("Registration failed: ", err);
+      console.log("Login failed: ", err);
       return { message: "Error logging in. Try again later." };
     }
   }
 
-  static async getUserByUsername(username) {
+  static async getUser(username) {
     try {
       const currentUser = await Users.findOne({
         where: {
@@ -103,20 +163,50 @@ class UsersService {
     }
   }
 
-  static async updateAgent(agentName, fieldsToUpdate) {
+  static async updateUser(roleId, username, fieldsToUpdate) {
     try {
-      const agentToUpdate = await Users.findOne({
-        where: { username: agentName },
+      // check if the api call is from a valid user
+      const userToUpdate = await Users.findOne({
+        where: {
+          [Op.and]: [{ username: username }, { roleId: roleId }],
+        },
       });
-      if (agentToUpdate && agentToUpdate.roleId === 2) {
-        const fields = Object.keys(fieldsToUpdate);
-        fields.forEach((field) => {
-          agentToUpdate[field] = fieldsToUpdate[field];
-        });
-        await agentToUpdate.save();
-        return agentToUpdate;
+
+      if (!userToUpdate) {
+        return { message: "Cannot change information. Try again later." };
       }
-      return null;
+
+      // Check if username already exists
+      if (fieldsToUpdate.username) {
+        const verifyUsername = await Users.findOne({
+          where: { username: fieldsToUpdate.username },
+        });
+        if (verifyUsername) {
+          {
+            return { message: "Username is taken." };
+          }
+        }
+      }
+
+      // Check if email already exists
+      if (fieldsToUpdate.email) {
+        const verifyEmail = await Users.findOne({
+          where: { email: fieldsToUpdate.email },
+        });
+        if (verifyEmail) {
+          {
+            return { message: "Email is taken." };
+          }
+        }
+      }
+
+      // loop through the object to save the information
+      const fields = Object.keys(fieldsToUpdate);
+      fields.forEach((field) => {
+        userToUpdate[field] = fieldsToUpdate[field];
+      });
+      await userToUpdate.save();
+      return userToUpdate;
     } catch (e) {
       console.log(e);
       throw new Error();

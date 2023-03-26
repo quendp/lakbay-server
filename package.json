@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon app.js",
-    "deploy": "node app.js",
+    "deploy": "sequelize db:migrate && sequelize db:seed:all && node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,6 +25,7 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.0",
+    "jwt-decode": "^3.1.2",
     "mysql": "^2.18.1",
     "mysql2": "^3.0.1",
     "nodemon": "^2.0.20",
